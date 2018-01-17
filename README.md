@@ -5,6 +5,7 @@ Git Repository for 343
 The most used commands that I will use seem to be:
 
 *With the prefix of 'git'*
+- init - Creates the repository 
 
 - pull - Takes the repository from the server held version and copies that version to the work space
 - push - Copies the workspace version of the repository and sends it to the git server
