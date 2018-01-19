@@ -18,3 +18,4 @@ The most used commands that I will use seem to be:
 - merge
 
 I may occationally use git log but it seems like that would be better to see in the chrome version. 
+"# CalendarProject" 
