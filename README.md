@@ -1,4 +1,4 @@
-# 343-HW1
+# 343
 Git Repository for 343
 
 
