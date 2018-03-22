@@ -115,16 +115,22 @@ class Game(Observer):
 			for i in self.neighborhood.houses:
 				if(self.neighborhood.houses.index(i) % 6 != 0):
 						if(i.monsters == 0):
-							print("C ", end=""),
+							print("  %d.C  " % self.neighborhood.houses.index(i), end=""),
 						else:
-							print("H ", end=""),
+							print("  %d.H  " % self.neighborhood.houses.index(i), end=""),
 				else:
 					print("")
-			choice = input("\rPick a number of house to move to: ")
-			if(self.neighborhood.houses[int(choice)].monsters == 0):
-				print("That house has no monsters in it! Your work there is done.")
-			else:
-				self.neighborhood.enterHouse(int(choice), self.player)
+			try: 
+				choice = int(input("\rPick a number of house to move to: "))
+				if(choice >= 0 and choice <= len(self.neighborhood.houses)):
+					if(self.neighborhood.houses[int(choice)].monsters == 0):
+						print("That house has no monsters in it! Your work there is done.")
+					else:
+						self.neighborhood.enterHouse(int(choice), self.player)
+				else:
+					print("Please enter a number in the range of 1 and 25.")
+			except ValueError:
+					print("Please enter a number in the range of 1 and 25")
 
 
 class Neighborhood(Observer, Observable):
@@ -135,12 +141,13 @@ class Neighborhood(Observer, Observable):
 		self.cols = 5
 		self.houses = []
 		for i in range(self.rows * self.cols):
-			holder = House()
-			holder.addObserver(self)
-			self.houses.append(holder)
+			self.houses.append(House())
 			
 	def enterHouse(self, house, player):
 		self.houses[house].engageHouse(player)
+		
+	def getHouses(self):
+		return self.houses
 
 
 class House(Observer, Observable):
@@ -152,70 +159,115 @@ class House(Observer, Observable):
 		self.userSelection = 0
 		self.iniciateMemberList()
 		
+	def getMonsters(self):
+		return self.monsters
+	
+	def getMembers(self):
+		return self.memberList
+	
+	def getUserSelection(self):
+		return self.userSelection
+
+	def setUserSelection(self, value):
+		self.userSelection = value
+				
 	def iniciateMemberList(self):
 		for i in range(self.monsters):
 			choice = randint(0, 3)
 			if(choice == 0):
-				holder = Zombie()
-				holder.addObserver(self)
-				self.memberList.append(holder)
+				self.getMembers().append(Zombie())
 			elif(choice == 1):
-				holder = Vampire()
-				holder.addObserver(self)
-				self.memberList.append(holder)
+				self.getMembers().append(Vampire())
 			elif(choice == 2):
-				holder = Ghoul()
-				holder.addObserver(self)
-				self.memberList.append(holder)
+				self.getMembers().append(Ghoul())
 			elif(choice == 3):
-				holder = Werewolf()
-				holder.addObserver(self)
-				self.memberList.append()
+				self.getMembers().append(Werewolf())
 
 	def engageHouse(self, thePlayer):
-		while(self.userSelection != -1 or self.monsters == 0):
+		while(self.getUserSelection() != -1 or self.getMonsters() == 0):
 			print("\rYour health is: %s. " % thePlayer.getHealth(), end="")
-			self.userSelection = input("""What will you do?
-				0: Run			1: Fight
-				""")
-			if(self.userSelection == "0"):
-				self.userSelection = -1
-			else:
-				self.fight(thePlayer)
+			try:
+				self.userSelection = int(input("""What will you do?
+					0: Run			1: Fight
+					"""))
+				if(self.getUserSelection() == 0 or self.getUserSelection() == 1):
+					if(self.getUserSelection() == 0):
+						self.setUserSelection(-1)
+					else:
+						self.fight(thePlayer)
+				else:
+					print("Please enter in either 0 or 1.")
+			except ValueError:
+				print("Please enter in either 0 or 1.")
+				
+				
 				
 	def fight(self, thePlayer):
-		################
-		#
-		# FIX THIS LOOP LATER
-		#
-		################
-		for i in self.memberList:
-			if(self.memberList.index(i) % 4 != 0):
-				print("%d.%s: %d HP\t" % (self.memberList.index(i), self.memberList[self.memberList.index(i)].name, self.memberList[self.memberList.index(i)].health), end="")
+		
+		while True:
+			if(self.pickTarget(thePlayer) != 1):
+				pass
 			else:
-				print("\r%d.%s: %d HP\t" % (self.memberList.index(i), self.memberList[self.memberList.index(i)].name, self.memberList[self.memberList.index(i)].health), end="")
-			
-		thePlayer.target = input("\r\rWho will you target?")
+				break
 		
-		################
-		#
-		# FIX THIS LOOP LATER
-		#
-		################
-		for j in thePlayer.backpack:
-			if(thePlayer.backpack.index(j) % 4 != 0):
-				print("%d.%s: %d uses left\t\t" % (thePlayer.backpack.index(j), thePlayer.backpack[thePlayer.backpack.index(j)].name, thePlayer.backpack[thePlayer.backpack.index(j)].uses), end="")
+		while True:
+			if(self.pickWeapon(thePlayer) != 1):
+				pass
 			else:
-				print("\r%d.%s: %d uses left\t" % (thePlayer.backpack.index(j), thePlayer.backpack[thePlayer.backpack.index(j)].name, thePlayer.backpack[thePlayer.backpack.index(j)].uses), end="")
-				
-		thePlayer.currentMod = thePlayer.backpack[int(input("\rWhat weapon will you use?"))]
+				break
 		
-		self.memberList[int(thePlayer.target)].takeDamage(thePlayer.dealDamage(), thePlayer.currentMod)
 		
-		for i in self.memberList:
+		self.getMembers()[int(thePlayer.getTarget())].takeDamage(thePlayer.dealDamage(), thePlayer.getCurrentMod())
+		
+		for i in self.getMembers():
 			thePlayer.takeDamage(i.dealDamage(i.getMinDamage(), i.getMaxDamage()))
+	
+	
+	
+	def pickTarget(self, thePlayer):
+		returnVal = 0
+		for i in self.getMembers():
+			if(self.getMembers().index(i) % 4 != 0):
+				print("%d.%s: %d HP\t" % (self.getMembers().index(i), self.getMembers()[self.getMembers().index(i)].name, self.getMembers()[self.getMembers().index(i)].health), end="")
+			else:
+				print("\r%d.%s: %d HP\t" % (self.getMembers().index(i), self.getMembers()[self.getMembers().index(i)].name, self.getMembers()[self.getMembers().index(i)].health), end="")
+			
+		try:
+			holder = int(input("\r\rWho will you target?"))
+			if(holder >= 0 and holder <= len(self.getMembers())):
+				thePlayer.setTarget(holder)
+				returnVal = 1
+			else:
+				print("Please enter in a valid monster number.")
+		except ValueError:
+			print("Please enter in a valid monster number.")
+			
+		return returnVal
+	
+	
+	
+	def pickWeapon(self, thePlayer):
+		returnVal = 0
+		for j in thePlayer.getBackpack():
+			if(thePlayer.getBackpack().index(j) % 4 != 0):
+				print("%d.%s: %d uses left\t\t" % (thePlayer.getBackpack().index(j), thePlayer.getBackpack()[thePlayer.getBackpack().index(j)].name, thePlayer.getBackpack()[thePlayer.getBackpack().index(j)].uses), end="")
+			else:
+				print("\r%d.%s: %d uses left\t" % (thePlayer.getBackpack().index(j), thePlayer.getBackpack()[thePlayer.getBackpack().index(j)].name, thePlayer.getBackpack()[thePlayer.getBackpack().index(j)].uses), end="")
+		
+		try:
+			holder = int(input("\rWhat weapon will you use?"))
+			if(holder >= 0 and holder <= len(thePlayer.getBackpack())):
+				thePlayer.setMod(thePlayer.getBackpack()[holder])
+				returnVal = 1
+			else:
+				print("Please enter in a valid item number.")
+		except ValueError:
+			print("Please enter in a valid item number.")
 
-
+		return returnVal
+	
+	
+	
 class NPC(Observable):
 
 	def __init__(self, name, health, lowDmg, highDmg):
@@ -387,3 +439,22 @@ class Player:
 	def getMaxAtk(self):
 		return self.maxAtk
 	
+	def getTarget(self):
+		return self.target
+	
+	def getCurrentMod(self):
+		return self.currentMod
+	
+	def getBackpack(self):
+		return self.backpack
+	
+	def setTarget(self, value):
+		self.target = value
+		
+	def setName(self, value):
+		self.name = value
+		
+	def setMod(self, value):
+		self.currentMod = value
+		
+
