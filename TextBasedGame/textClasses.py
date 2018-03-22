@@ -10,9 +10,10 @@ class Game(Observer):
 	def __init__(self):
 		self.neighborhood = Neighborhood()
 		self.player = Player("Holder")
-		self.gameOver = False
+		self.gameOver = "in-progress"
 
 	def introScreen(self):
+
 		print("""                      ,____
                       |----|
               ___     |     `
@@ -109,20 +110,66 @@ class Game(Observer):
 
 			""")
 		time.sleep(3)
+	
+	def getStatus(self):
+		return self.gameOver
+	
+	def playWonCredits(self):
+		print("""                      ,____
+                      |----|
+              ___     |     `
+             / .-\  ./=)
+            |  |"|_/\/|         Well done %s, you ssssaved the town. Ssssadly, nothing comes without a price.
+            ;  |-;| /_|
+           / \_| |/ \ |
+          /      \/\( |
+          |   /  |` ) |
+          /   \ _/    |
+         /--._/  \    |
+         `/|)    |    /
+           /     |   |
+         .'      |   |
+        /         \  |
+       (_.-.__.__./  /""" % self.player.getName())
 		
+		print("""\r\rSWOOOSHHHHH
+               .""--..__             
+              /[]       ``-.._       
+             / /\__           `-._         You died anyways....
+            / /    ```---..__     `-.
+           / /               ``--._  `.
+          / /                      `-. \\
+         / /                          `.\\
+        / /                            `\|
+
+																		""")
+		#credit:http://ascii.co.uk/art/scythe
+		
+	def playLostCredits(self):
+		print("""       ____
+     ,'   Y`. 
+    /	     \      The game was lost....
+    \ ()  () /
+     `. /\ ,'
+ 8====| "" |====8
+      `LLLU'""")
+			
 	def playGame(self):
-		while (self.gameOver != True):
-			for i in self.neighborhood.houses:
-				if(self.neighborhood.houses.index(i) % 6 != 0):
-						if(i.monsters == 0):
-							print("  %d.C  " % self.neighborhood.houses.index(i), end=""),
+		while (self.gameOver == "in-progress"):
+			for i in range(0, len(self.neighborhood.houses)):
+				if(i % 5 != 0):
+						if(self.neighborhood.houses[i].monsters == 0):
+							print("  %d.C  " % i, end = "")
 						else:
-							print("  %d.H  " % self.neighborhood.houses.index(i), end=""),
+							print("  %d.H  " % i, end = "")
 				else:
-					print("")
+					if(self.neighborhood.houses[i].monsters == 0):
+						print("\r  %d.C  " % i, end = "")
+					else:
+						print("\r  %d.H  " % i, end = "")
 			try: 
 				choice = int(input("\rPick a number of house to move to: "))
-				if(choice >= 0 and choice <= len(self.neighborhood.houses)):
+				if(choice >= 0 and choice < len(self.neighborhood.houses)):
 					if(self.neighborhood.houses[int(choice)].monsters == 0):
 						print("That house has no monsters in it! Your work there is done.")
 					else:
@@ -131,8 +178,18 @@ class Game(Observer):
 					print("Please enter a number in the range of 1 and 25.")
 			except ValueError:
 					print("Please enter a number in the range of 1 and 25")
+			
+			if(self.player.getHealth() <= 0):
+				self.gameOver = "player lost"
+			elif(self.neighborhood.getHousesLeft() == 0):
+				self.gameOver = "player won"
+			else:
+				pass
 
-
+		if(self.getStatus() == "player won"):
+			self.playWonCredits()
+		else:
+			self.playLostCredits()
 class Neighborhood(Observer, Observable):
 	
 	def __init__(self):
@@ -141,13 +198,25 @@ class Neighborhood(Observer, Observable):
 		self.cols = 5
 		self.houses = []
 		for i in range(self.rows * self.cols):
-			self.houses.append(House())
+			holder = House()
+			Observable.add_observer(holder, self)
+			self.houses.append(holder)
+			
+		self.housesLeft = len(self.houses)
+		print(self.housesLeft)
+		
+	def getHousesLeft(self):
+		return self.housesLeft
 			
 	def enterHouse(self, house, player):
 		self.houses[house].engageHouse(player)
 		
 	def getHouses(self):
 		return self.houses
+	
+	def updateObserver(self, updater):
+		print(self.housesLeft)
+		self.housesLeft -= 1
 
 
 class House(Observer, Observable):
@@ -156,7 +225,7 @@ class House(Observer, Observable):
 		Observable.__init__(self)
 		self.monsters = randint(0, 10)
 		self.memberList = []
-		self.userSelection = 0
+		self.userSelection = 1
 		self.iniciateMemberList()
 		
 	def getMonsters(self):
@@ -170,29 +239,39 @@ class House(Observer, Observable):
 
 	def setUserSelection(self, value):
 		self.userSelection = value
+		
+	def decrimentMonsters(self):
+		self.monsters -= 1
 				
 	def iniciateMemberList(self):
 		for i in range(self.monsters):
 			choice = randint(0, 3)
 			if(choice == 0):
-				self.getMembers().append(Zombie())
+				holder = Zombie()
+				Observable.add_observer(holder, self)
+				self.getMembers().append(holder)
 			elif(choice == 1):
-				self.getMembers().append(Vampire())
+				holder = Vampire()
+				Observable.add_observer(holder, self)
+				self.getMembers().append(holder)
 			elif(choice == 2):
-				self.getMembers().append(Ghoul())
+				holder = Ghoul()
+				Observable.add_observer(holder, self)
+				self.getMembers().append(holder)
 			elif(choice == 3):
-				self.getMembers().append(Werewolf())
+				holder = Werewolf()
+				Observable.add_observer(holder, self)
+				self.getMembers().append(holder)
 
 	def engageHouse(self, thePlayer):
-		while(self.getUserSelection() != -1 or self.getMonsters() == 0):
+		while(self.getUserSelection() != 0 and self.getMonsters() != 0):
 			print("\rYour health is: %s. " % thePlayer.getHealth(), end="")
 			try:
-				self.userSelection = int(input("""What will you do?
-					0: Run			1: Fight
-					"""))
+				self.setUserSelection(int(input("""What will you do?
+					0: Run			1: Fight"""))) 
 				if(self.getUserSelection() == 0 or self.getUserSelection() == 1):
 					if(self.getUserSelection() == 0):
-						self.setUserSelection(-1)
+						pass
 					else:
 						self.fight(thePlayer)
 				else:
@@ -200,6 +279,10 @@ class House(Observer, Observable):
 			except ValueError:
 				print("Please enter in either 0 or 1.")
 				
+		
+		if(self.getMonsters() == 0):
+			Observable.updateObservable(self)
+		self.setUserSelection(1)
 				
 				
 	def fight(self, thePlayer):
@@ -223,18 +306,17 @@ class House(Observer, Observable):
 			thePlayer.takeDamage(i.dealDamage(i.getMinDamage(), i.getMaxDamage()))
 	
 	
-	
 	def pickTarget(self, thePlayer):
 		returnVal = 0
 		for i in self.getMembers():
 			if(self.getMembers().index(i) % 4 != 0):
-				print("%d.%s: %d HP\t" % (self.getMembers().index(i), self.getMembers()[self.getMembers().index(i)].name, self.getMembers()[self.getMembers().index(i)].health), end="")
+				print("%d.%s: %d HP\t" % (self.getMembers().index(i), self.getMembers()[self.getMembers().index(i)].name, self.getMembers()[self.getMembers().index(i)].health))
 			else:
 				print("\r%d.%s: %d HP\t" % (self.getMembers().index(i), self.getMembers()[self.getMembers().index(i)].name, self.getMembers()[self.getMembers().index(i)].health), end="")
 			
 		try:
 			holder = int(input("\r\rWho will you target?"))
-			if(holder >= 0 and holder <= len(self.getMembers())):
+			if(holder >= 0 and holder < len(self.getMembers())):
 				thePlayer.setTarget(holder)
 				returnVal = 1
 			else:
@@ -243,7 +325,6 @@ class House(Observer, Observable):
 			print("Please enter in a valid monster number.")
 			
 		return returnVal
-	
 	
 	
 	def pickWeapon(self, thePlayer):
@@ -266,7 +347,12 @@ class House(Observer, Observable):
 
 		return returnVal
 	
-	
+	def updateObserver(self, updater):
+		self.getMembers().remove(updater)
+		self.getMembers().append(Person())
+		self.decrimentMonsters()
+		if(self.getMonsters() == 0):
+			Observable.updateObservable(self)
 	
 class NPC(Observable):
 
@@ -296,56 +382,64 @@ class NPC(Observable):
 		return self.highDmg
 		
 
-
 class Person(NPC):
 
 	def __init__(self):
-		NPC.__init__(self, "Person", 100, -1, -1)
+		NPC.__init__(self, "Person", 100, -5, -5)
 		
-	def takeDamage(self, damage):
+	def takeDamage(self, damage, mod):
 		self.health -= 0
 
 
 class Zombie(NPC):
 
 	def __init__(self):
-		NPC.__init__(self, "Zombie", randint(50, 100), 0, 10)
+		NPC.__init__(self, "Zombie", randint(60, 73), 0, 10)
 		
 	def takeDamage(self, damage, mod):
 		if(mod.name == "SourStraws"):
 			self.health -= damage * 2
 		else:
 			self.health -= damage
-
+			
+		if(self.getHealth() <= 0):
+			print("\rThe targeted Zombie has been defeated!")
+			Observable.updateObservable(self)
 			
 class Vampire(NPC):
 
 	def __init__(self):
-		NPC.__init__(self, "Vampire", randint(100, 200), 10, 20)
+		NPC.__init__(self, "Vampire", randint(66, 99), 10, 20)
 
 	def takeDamage(self, damage, mod):
 		if((mod.name == "ChocolateBars")):
 			self.health -= 0
 		else:
 			self.health -= damage
-
+			
+		if(self.getHealth() <= 0):
+			print("\rThe targeted Vampire has been defeated!")
+			Observable.updateObservable(self)
 
 class Ghoul(NPC):
 
 	def __init__(self):
-		NPC.__init__(self, "Ghoul", randint(40, 80), 15, 30)
+		NPC.__init__(self, "Ghoul", randint(43, 63), 15, 30)
 
 	def takeDamage(self, damage, mod):
 		if(mod.name == "NerdBombs"):
 			self.health -= damage * 5
 		else:
 			self.health -= damage
-
+			
+		if(self.getHealth() <= 0):
+			print("\rThe targeted Ghoul has been defeated!")
+			Observable.updateObservable(self)
 
 class Werewolf(NPC):
 
 	def __init__(self):
-		NPC.__init__(self, "Werewolf", 200, 0, 40)
+		NPC.__init__(self, "Werewolf", 125, 0, 40)
 		
 	def takeDamage(self, damage, mod):
 		if((mod.name == "ChocolateBars") or (mod.name == "SourStraws")):
@@ -353,6 +447,9 @@ class Werewolf(NPC):
 		else:
 			self.health -= damage
 
+		if(self.getHealth() <= 0):
+			print("\rThe targeted Werewolf has been defeated!")
+			Observable.updateObservable(self)
 
 class Weapon:
 
@@ -399,8 +496,8 @@ class Player:
 		self.name = name
 		self.backpack = []
 		self.health = 400
-		self.minAtk = 10
-		self.maxAtk = 20
+		self.minAtk = 15
+		self.maxAtk = 25
 		self.target = 0
 		self.currentMod = 0
 		
@@ -415,7 +512,7 @@ class Player:
 				self.backpack.append(SourStraws())
 			elif(choice == 3):
 				self.backpack.append(ChocolateBars())
-			elif(choice == 4):
+			else:
 				self.backpack.append(NerdBombs())
 		
 	def takeDamage(self, damage):
@@ -457,4 +554,3 @@ class Player:
 	def setMod(self, value):
 		self.currentMod = value
 		
-

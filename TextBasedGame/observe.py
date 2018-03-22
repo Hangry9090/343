@@ -27,4 +27,4 @@ class Observable(object):
 
         def updateObservable(self):
                 for observer in self.observers:
-                        observer.update()
+                        observer.updateObserver(self)
