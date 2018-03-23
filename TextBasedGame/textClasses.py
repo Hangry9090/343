@@ -4,14 +4,27 @@ import time
 from observe import Observable
 from observe import Observer
 
-
+###########################################################
+# The game hold the neighborhood and player object
+# it also contains the game engine
+###########################################################
 class Game(Observer):
 
+	##############################
+	# Iniciate the Game Object
+	#
+	# @param self
+	##############################
 	def __init__(self):
 		self.neighborhood = Neighborhood()
 		self.player = Player("Holder")
 		self.gameOver = "in-progress"
 
+	###########################################################
+	# Prints the introduction screen and takes the players name
+	#
+	# @param self
+	###########################################################
 	def introScreen(self):
 
 		print("""                      ,____
@@ -111,9 +124,20 @@ class Game(Observer):
 			""")
 		time.sleep(3)
 	
+	###########################################################
+	# Returns the status of the game
+	#
+	# @param self
+	# @return self.gameOver
+	###########################################################
 	def getStatus(self):
 		return self.gameOver
 	
+	###########################################################
+	# Prints the credits if the player won
+	#
+	# @param self
+	###########################################################
 	def playWonCredits(self):
 		print("""                      ,____
                       |----|
@@ -145,6 +169,11 @@ class Game(Observer):
 																		""")
 		#credit:http://ascii.co.uk/art/scythe
 		
+	###########################################################
+	# Prints the ending if the player lost
+	#
+	# @param self
+	###########################################################
 	def playLostCredits(self):
 		print("""       ____
      ,'   Y`. 
@@ -153,20 +182,30 @@ class Game(Observer):
      `. /\ ,'
  8====| "" |====8
       `LLLU'""")
-			
+	
+	###################################################################
+	# Here is the game engine where the player selects a house to fight
+	#
+	# @param self
+	###################################################################
 	def playGame(self):
 		while (self.gameOver == "in-progress"):
+			#For each house in the neighborhood
 			for i in range(0, len(self.neighborhood.houses)):
 				if(i % 5 != 0):
+					#Prints a C for a completed house
 						if(self.neighborhood.houses[i].monsters == 0):
 							print("  %d.C  " % i, end = "")
 						else:
 							print("  %d.H  " % i, end = "")
 				else:
+					#Prints a C for a complete house but adds a newline
 					if(self.neighborhood.houses[i].monsters == 0):
 						print("\r  %d.C  " % i, end = "")
 					else:
 						print("\r  %d.H  " % i, end = "")
+						
+			#Attempting to take a user input for the house to attack
 			try: 
 				choice = int(input("\rPick a number of house to move to: "))
 				if(choice >= 0 and choice < len(self.neighborhood.houses)):
@@ -178,7 +217,8 @@ class Game(Observer):
 					print("Please enter a number in the range of 1 and 25.")
 			except ValueError:
 					print("Please enter a number in the range of 1 and 25")
-			
+					
+			#Checks the players health to see if they lost then checks to see if all houses are beaten
 			if(self.player.getHealth() <= 0):
 				self.gameOver = "player lost"
 			elif(self.neighborhood.getHousesLeft() == 0):
@@ -186,12 +226,22 @@ class Game(Observer):
 			else:
 				pass
 
+		#Rolls appropriate ending scene
 		if(self.getStatus() == "player won"):
 			self.playWonCredits()
 		else:
 			self.playLostCredits()
+			
+###########################################################
+# The neighborhood object holds houses 
+###########################################################
 class Neighborhood(Observer, Observable):
 	
+	###########################################################
+	# Inicitates the Neighborhood object
+	#
+	# @param self
+	###########################################################
 	def __init__(self):
 		Observable.__init__(self)
 		self.rows = 5
@@ -205,22 +255,53 @@ class Neighborhood(Observer, Observable):
 		self.housesLeft = len(self.houses)
 		print(self.housesLeft)
 		
+	###########################################################
+	# Returns how many houses are unbeaten
+	#
+	# @param self
+	# @return self.housesLeft
+	###########################################################
 	def getHousesLeft(self):
 		return self.housesLeft
 			
+	###########################################################
+	# Calls the engageHouse method for the particular house
+	#
+	# @param self
+	###########################################################
 	def enterHouse(self, house, player):
 		self.houses[house].engageHouse(player)
 		
+	###########################################################
+	# Returns the total amount of houses
+	#
+	# @param self
+	# @return self.house
+	###########################################################
 	def getHouses(self):
 		return self.houses
 	
+	###########################################################
+	# Reduced the housesLeft count when updated by 
+	# a defeated house
+	#
+	# @param self
+	# @param updater
+	###########################################################
 	def updateObserver(self, updater):
-		print(self.housesLeft)
 		self.housesLeft -= 1
 
-
+###########################################################
+# The house is responcible for holding monsters 
+# and handling fights
+###########################################################
 class House(Observer, Observable):
-		
+	
+	###########################################################
+	# Iniciates the House object
+	#
+	# @param self
+	###########################################################	
 	def __init__(self):
 		Observable.__init__(self)
 		self.monsters = randint(0, 10)
@@ -228,21 +309,54 @@ class House(Observer, Observable):
 		self.userSelection = 1
 		self.iniciateMemberList()
 		
+	###########################################################
+	# Returns how many monsters are in the house
+	#
+	# @param self
+	# @return self.monsters
+	###########################################################
 	def getMonsters(self):
 		return self.monsters
 	
+	###########################################################
+	# Returns the list of NPCs in the house
+	#
+	# @param self
+	# @return self.memberList
+	###########################################################
 	def getMembers(self):
 		return self.memberList
 	
+	###########################################################
+	# Returns the userSelection for choice making
+	#
+	# @param self
+	# @return self.userSelection
+	###########################################################
 	def getUserSelection(self):
 		return self.userSelection
 
+	###########################################################
+	# Sets the userSelection
+	#
+	# @param self
+	###########################################################
 	def setUserSelection(self, value):
 		self.userSelection = value
 		
+	###########################################################
+	# Reduced the number of monsters by one
+	#
+	# @param self
+	###########################################################
 	def decrimentMonsters(self):
 		self.monsters -= 1
 				
+	###########################################################
+	# Iniciates the monsters in the house
+	#
+	# @param self
+	###########################################################
 	def iniciateMemberList(self):
 		for i in range(self.monsters):
 			choice = randint(0, 3)
@@ -263,6 +377,12 @@ class House(Observer, Observable):
 				Observable.add_observer(holder, self)
 				self.getMembers().append(holder)
 
+	###########################################################
+	# Choice menu to run or fight, calls fight logic
+	#
+	# @param self
+	# @param thePlayer
+	###########################################################
 	def engageHouse(self, thePlayer):
 		while(self.getUserSelection() != 0 and self.getMonsters() != 0):
 			print("\rYour health is: %s. " % thePlayer.getHealth(), end="")
@@ -284,28 +404,42 @@ class House(Observer, Observable):
 			Observable.updateObservable(self)
 		self.setUserSelection(1)
 				
-				
+	###########################################################
+	# The fighting logic for the game
+	#
+	# @param self
+	# @param thePlayer
+	###########################################################
 	def fight(self, thePlayer):
 		
+		#Runs until there is a valid input
 		while True:
 			if(self.pickTarget(thePlayer) != 1):
 				pass
 			else:
 				break
 		
+		#Runs until there is a valid input
 		while True:
 			if(self.pickWeapon(thePlayer) != 1):
 				pass
 			else:
 				break
 		
-		
+		#Attacks the player targeted monster
 		self.getMembers()[int(thePlayer.getTarget())].takeDamage(thePlayer.dealDamage(), thePlayer.getCurrentMod())
 		
+		#Monsters attack the player
 		for i in self.getMembers():
 			thePlayer.takeDamage(i.dealDamage(i.getMinDamage(), i.getMaxDamage()))
 	
-	
+	###########################################################
+	# Prints monsters healths and asks for a target
+	#
+	# @param self
+	# @param thePlayer
+	# @return returnVal - 1 if successful, 0 if out of bounds
+	###########################################################
 	def pickTarget(self, thePlayer):
 		returnVal = 0
 		for i in self.getMembers():
@@ -326,7 +460,13 @@ class House(Observer, Observable):
 			
 		return returnVal
 	
-	
+	###########################################################
+	# Prints the player weapons and gets an input
+	#
+	# @param self
+	# @param thePlayer
+	# @return returnVal - 1 if successful or 0 if otherwise
+	###########################################################
 	def pickWeapon(self, thePlayer):
 		returnVal = 0
 		for j in thePlayer.getBackpack():
@@ -347,15 +487,34 @@ class House(Observer, Observable):
 
 		return returnVal
 	
+	###########################################################
+	# Removes the dead monster, adds a person, 
+	# decriments monsters, and updates observers
+	#
+	# @param self
+	# @param updater
+	###########################################################
 	def updateObserver(self, updater):
 		self.getMembers().remove(updater)
 		self.getMembers().append(Person())
 		self.decrimentMonsters()
 		if(self.getMonsters() == 0):
 			Observable.updateObservable(self)
-	
+
+###########################################################
+# Parent class for the monsters
+###########################################################
 class NPC(Observable):
 
+	###########################################################
+	# Iniciates an NPC object 
+	#
+	# @param self
+	# @param name
+	# @param health
+	# @param lowDmg
+	# @param highDmg
+	###########################################################
 	def __init__(self, name, health, lowDmg, highDmg):
 		Observable.__init__(self)
 		self.name = name
@@ -363,39 +522,109 @@ class NPC(Observable):
 		self.lowDmg = lowDmg
 		self.highDmg = highDmg
 		
+	###########################################################
+	# Returns a random int between high and low damage
+	#
+	# @param self
+	# @param lowDmg
+	# @param highDmg
+	# @return randint(lowDmg, highDmg)
+	###########################################################
 	def dealDamage(self, lowDmg, highDmg):
 		return randint(lowDmg, highDmg)
 
+	###########################################################
+	# Applies damage to the NPC, lowers health
+	#
+	# @param self
+	# @param damage
+	# @param mod
+	###########################################################
 	def takeDamage(self, damage, mod):
 		self.health -= damage
 
+	###########################################################
+	# Returns name
+	#
+	# @param self
+	# @return self.name
+	###########################################################
 	def getName(self):
 		return self.name
 	
+	###########################################################
+	# Returns the NPC Health
+	#
+	# @param self
+	# @return self.health
+	###########################################################
 	def getHealth(self):
 		return self.health
 	
+	###########################################################
+	# Returns the lowDmg bound of the NPC
+	#
+	# @param self
+	# @return self.lowDmg
+	###########################################################
 	def getMinDamage(self):
 		return self.lowDmg
 	
+	###########################################################
+	# Returns the highDmg bound of the NPC
+	#
+	# @param self
+	# @return self.highDmg
+	###########################################################
 	def getMaxDamage(self):
 		return self.highDmg
 		
-
+###########################################################
+# The person object logic and methods
+###########################################################
 class Person(NPC):
 
+	###########################################################
+	# Iniciates the Person object, call the super __init__ from 
+	# NPC 
+	#
+	# @param self
+	###########################################################
 	def __init__(self):
 		NPC.__init__(self, "Person", 100, -5, -5)
 		
+	###########################################################
+	# Applies no damage, ever
+	#
+	# @param self
+	# @param damage
+	# @param mod
+	###########################################################
 	def takeDamage(self, damage, mod):
 		self.health -= 0
 
 
+###########################################################
+# The Zombie object logic and methods
+###########################################################
 class Zombie(NPC):
-
+	
+	###########################################################
+	# Iniciates the Zombie object, call the super __init__ from 
+	# NPC 
+	#
+	# @param self
+	###########################################################
 	def __init__(self):
 		NPC.__init__(self, "Zombie", randint(60, 73), 0, 10)
-		
+	
+	###########################################################
+	# Applies double damage for SourStraws mod and normal otherwise
+	#
+	# @param self
+	# @param damage
+	# @param mod
+	###########################################################	
 	def takeDamage(self, damage, mod):
 		if(mod.name == "SourStraws"):
 			self.health -= damage * 2
@@ -405,12 +634,28 @@ class Zombie(NPC):
 		if(self.getHealth() <= 0):
 			print("\rThe targeted Zombie has been defeated!")
 			Observable.updateObservable(self)
-			
+
+###########################################################
+# The Vampire object logic and methods
+###########################################################			
 class Vampire(NPC):
 
+	###########################################################
+	# Iniciates the Vampire object, call the super __init__ from 
+	# NPC 
+	#
+	# @param self
+	###########################################################
 	def __init__(self):
 		NPC.__init__(self, "Vampire", randint(66, 99), 10, 20)
 
+	###########################################################
+	# Immune to chocolatebars and normal damage otherwise
+	#
+	# @param self
+	# @param damage
+	# @param mod
+	###########################################################	
 	def takeDamage(self, damage, mod):
 		if((mod.name == "ChocolateBars")):
 			self.health -= 0
@@ -421,11 +666,28 @@ class Vampire(NPC):
 			print("\rThe targeted Vampire has been defeated!")
 			Observable.updateObservable(self)
 
+
+###########################################################
+# The Ghoul object logic and methods
+###########################################################
 class Ghoul(NPC):
 
+	###########################################################
+	# Iniciates the Ghoul object, call the super __init__ from 
+	# NPC 
+	#
+	# @param self
+	###########################################################
 	def __init__(self):
 		NPC.__init__(self, "Ghoul", randint(43, 63), 15, 30)
 
+	###########################################################
+	# Nerdbomb damage times 5, normal damage applied otherwise
+	#
+	# @param self
+	# @param damage
+	# @param mod
+	###########################################################	
 	def takeDamage(self, damage, mod):
 		if(mod.name == "NerdBombs"):
 			self.health -= damage * 5
@@ -436,11 +698,28 @@ class Ghoul(NPC):
 			print("\rThe targeted Ghoul has been defeated!")
 			Observable.updateObservable(self)
 
+###########################################################
+# The Werewolf object logic and methods
+###########################################################
 class Werewolf(NPC):
 
+	###########################################################
+	# Iniciates the Werewolf object, call the super __init__ from 
+	# NPC 
+	#
+	# @param self
+	###########################################################
 	def __init__(self):
 		NPC.__init__(self, "Werewolf", 125, 0, 40)
 		
+	###########################################################
+	# No damage for chocolatebars and sourstraws
+	# normal damage otherwise
+	#
+	# @param self
+	# @param damage
+	# @param mod
+	###########################################################	
 	def takeDamage(self, damage, mod):
 		if((mod.name == "ChocolateBars") or (mod.name == "SourStraws")):
 			self.health -= 0
@@ -451,45 +730,89 @@ class Werewolf(NPC):
 			print("\rThe targeted Werewolf has been defeated!")
 			Observable.updateObservable(self)
 
+
+###########################################################
+# The Weapon parent object logic and methods
+###########################################################
 class Weapon:
 
+	###########################################################
+	# Iniciates the weapon class
+	#
+	# @param self
+	# @param name
+	# @param minAtkMod
+	# @param maxAtkMod
+	# @param uses
+	###########################################################	
 	def __init__(self, name, minAtkMod, maxAtkMod, uses):
 		self.name = name
 		self.minAtkMod = minAtkMod
 		self.maxAtkMod = maxAtkMod
 		self.uses = uses
 		
+	###########################################################
+	# Return uses of wepaon
+	#
+	# @param self
+	# @return self.uses
+	###########################################################	
 	def getUses(self):
 		return self.uses
 	
+	###########################################################
+	# Decriments weapon uses
+	#
+	# @param self
+	###########################################################	
 	def useWeapon(self):
 		self.uses -= 1
 
 
+
+###########################################################
+# The HersheyKiss object logic and methods
+# Child class of Weapon
+###########################################################
 class HersheyKiss(Weapon):
 
 	def __init__(self):
 		Weapon.__init__(self, "HersheyKisses", 1, 1, 100000)
 
 
+###########################################################
+# The SourStraws object logic and methods
+# Child class of Weapon
+###########################################################
 class SourStraws(Weapon):
 
 	def __init__(self):
 		Weapon.__init__(self, "SourStraws", 1, 1.75, 2)
 
 
+###########################################################
+# The ChocolateBars object logic and methods
+# Child class of Weapon
+###########################################################
 class ChocolateBars(Weapon):
 
 	def __init__(self):
 		Weapon.__init__(self, "ChocolateBars", 2, 2.4, 4)
 
 
+###########################################################
+# The NerdBombs object logic and methods
+# Child class of Weapon
+###########################################################
 class NerdBombs(Weapon):
 
 	def __init__(self):
 		Weapon.__init__(self, "NerdBombs", 3.5, 5, 1)
 
 
+###########################################################
+# The Player object logic and methods
+###########################################################
 class Player:
 
 	def __init__(self, name):
